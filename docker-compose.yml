@@ -2,16 +2,17 @@ services:
   postgres:
     image: postgres:19
     container_name: ledgercore-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: ledgercore
-      POSTGRES_USER: ledgercore
-      POSTGRES_PASSWORD: ledgercore
+      POSTGRES_DB: ${POSTGRES_DB:-ledgercore}
+      POSTGRES_USER: ${POSTGRES_USER:-ledgercore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ledgercore}
     ports:
       - "5432:5432"
     volumes:
-      - ledgercore-pgdata:/var/lib/postgresql/data
+      - ledgercore-pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ledgercore -d ledgercore"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -19,13 +20,15 @@ services:
   app:
     build: .
     container_name: ledgercore-app
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/ledgercore
-      DB_USERNAME: ledgercore
-      DB_PASSWORD: ledgercore
-      LEDGERCORE_HMAC_SECRET: dev-only-secret-change-me
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ledgercore}
+      DB_USERNAME: ${POSTGRES_USER:-ledgercore}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-ledgercore}
+      LEDGERCORE_HMAC_SECRET: ${LEDGERCORE_HMAC_SECRET:-dev-only-secret-change-me}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=75.0
     depends_on:
       postgres:
         condition: service_healthy

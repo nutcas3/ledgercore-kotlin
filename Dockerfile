@@ -5,8 +5,10 @@ COPY gradlew settings.gradle.kts build.gradle.kts ./
 COPY gradle gradle
 RUN chmod +x gradlew && ./gradlew --version --no-daemon
 
+RUN --mount=type=cache,target=/root/.gradle ./gradlew dependencies --no-daemon
+
 COPY src src
-RUN ./gradlew bootWar --no-daemon -x test
+RUN --mount=type=cache,target=/root/.gradle ./gradlew bootWar --no-daemon -x test
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
