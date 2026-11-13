@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:19
+    container_name: ledgercore-postgres
+    environment:
+      POSTGRES_DB: ledgercore
+      POSTGRES_USER: ledgercore
+      POSTGRES_PASSWORD: ledgercore
+    ports:
+      - "5432:5432"
+    volumes:
+      - ledgercore-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledgercore -d ledgercore"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: ledgercore-app
+    ports:
+      - "8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/ledgercore
+      DB_USERNAME: ledgercore
+      DB_PASSWORD: ledgercore
+      LEDGERCORE_HMAC_SECRET: dev-only-secret-change-me
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  ledgercore-pgdata:
